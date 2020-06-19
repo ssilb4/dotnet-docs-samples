@@ -13,25 +13,24 @@
 // the License.
 
 using System;
-using System.Linq;
-using System.Collections.Generic;
+using System.IO;
 using CommandLine;
 using Google.Cloud.Dialogflow.V2;
 
 namespace GoogleCloudSamples
 {
-    // Samples demonstrating how to detect Intents using texts
-    public class DetectIntentTexts
+    // Samples demonstrating how to detect Intents and Texttospeech Response
+    public class DetectIntentTexttospeechResponse
     {
         public static void RegisterCommands(VerbMap<object> verbMap)
         {
             verbMap
-                .Add((DetectIntentFromTextsOptions opts) =>
-                     DetectIntentFromTexts(opts.ProjectId, opts.SessionId, opts.Texts, opts.LanguageCode));
+                .Add((DetectIntentTexttospeechResponseFromTextsOptions opts) =>
+                     DetectIntentTexttospeechResponseFromTexts(opts.ProjectId, opts.SessionId, opts.Texts, opts.LanguageCode));
         }
 
-        [Verb("detect-intent:texts", HelpText = "Detect Intent using provided texts")]
-        public class DetectIntentFromTextsOptions : OptionsWithProjectIdAndSessionId
+        [Verb("detect-intent:texttospeech", HelpText = "Detect Intent texttospeech response")]
+        public class DetectIntentTexttospeechResponseFromTextsOptions : OptionsWithProjectIdAndSessionId
         {
             [Value(0, MetaName = "texts", HelpText = "Comma separated text input", Required = true)]
             public string TextsInput { get; set; }
@@ -42,8 +41,8 @@ namespace GoogleCloudSamples
             public string LanguageCode { get; set; }
         }
 
-        // [START dialogflow_detect_intent_text]
-        public static int DetectIntentFromTexts(string projectId,
+        // [START dialogflow_detect_intent_texttospeech_response]
+        public static int DetectIntentTexttospeechResponseFromTexts(string projectId,
                                                 string sessionId,
                                                 string[] texts,
                                                 string languageCode = "en-US")
@@ -63,20 +62,21 @@ namespace GoogleCloudSamples
 
             foreach (var text in texts)
             {
-                var response = client.DetectIntent(
-                    session: SessionName.FromProjectSession(projectId, sessionId),
-                    queryInput: new QueryInput()
+                var response = client.DetectIntent(new DetectIntentRequest
                     {
-                        Text = new TextInput()
+                        SessionAsSessionName = SessionName.FromProjectSession(projectId, sessionId),
+                        OutputAudioConfig = outputAudioConfig,
+                        QueryInput = new QueryInput()
                         {
-                            Text = text,
-                            LanguageCode = languageCode
+                            Text = new TextInput()
+                            {
+                                Text = text,
+                                LanguageCode = languageCode
+                            }
                         }
-                    },
-                    OutputAudioConfig = outputAudioConfig
+                    }
                 );
 
-                
                 var queryResult = response.QueryResult;
 
                 Console.WriteLine($"Query text: {queryResult.QueryText}");
@@ -87,8 +87,8 @@ namespace GoogleCloudSamples
                 Console.WriteLine($"Intent confidence: {queryResult.IntentDetectionConfidence}");
                 Console.WriteLine($"Fulfillment text: {queryResult.FulfillmentText}");
                 Console.WriteLine();
-                
-                if(response.OutputAudio.Length > 0)
+
+                if (response.OutputAudio.Length > 0)
                 {
                     using (var output = File.Create("output.wav"))
                     {
@@ -100,6 +100,6 @@ namespace GoogleCloudSamples
 
             return 0;
         }
-        // [END dialogflow_detect_intent_text]
+        // [END dialogflow_detect_intent_texttospeech_response]
     }
 }
