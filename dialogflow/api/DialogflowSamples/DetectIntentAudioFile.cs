@@ -13,21 +13,20 @@
 // the License.
 
 using System;
-using System.Linq;
-using System.Collections.Generic;
+using System.IO;
 using CommandLine;
 using Google.Cloud.Dialogflow.V2;
 
 namespace GoogleCloudSamples
 {
-    // Samples demonstrating how to detect Intents using texts
+    // Samples demonstrating how to detect Intents using aduio file
     public class DetectIntentAudioFile
     {
         public static void RegisterCommands(VerbMap<object> verbMap)
         {
             verbMap
-                .Add((DetectIntentFromTextsOptions opts) =>
-                     DetectIntentFromTexts(opts.ProjectId, opts.SessionId, opts.Texts, opts.LanguageCode));
+                .Add((DetectIntentAudioFileOptions opts) =>
+                     DetectIntentFromAudioFile(opts.ProjectId, opts.SessionId, opts.FilePath, opts.LanguageCode));
         }
 
         [Verb("detect-intent:audio", HelpText = "Detect intent from audio")]
@@ -35,6 +34,9 @@ namespace GoogleCloudSamples
         {
             [Value(0, MetaName = "file", HelpText = "Path to the audio file", Required = true)]
             public string FilePath { get; set; }
+
+            [Value(1, MetaName = "languageCode", HelpText = "Language code, eg. en-US", Default = "en-US")]
+            public string LanguageCode { get; set; }
         }
 
         // [START dialogflow_detect_intent_audio_file]
@@ -52,17 +54,16 @@ namespace GoogleCloudSamples
                 bytesRead = fileStream.Read(buffer);
             }
 
-            var response = sessionsClient.DetectIntent(new DetectIntentRequest
+            var response = client.DetectIntent(new DetectIntentRequest
             {
                 SessionAsSessionName = SessionName.FromProjectSession(projectId, sessionId),
-                OutputAudioConfig = outputAudioConfig,
                 InputAudio = Google.Protobuf.ByteString.CopyFrom(buffer),
                 QueryInput = new QueryInput()
                 {
                     AudioConfig = new InputAudioConfig()
                     {
                         AudioEncoding = AudioEncoding.Linear16,
-                        LanguageCode = "en-US",
+                        LanguageCode = languageCode,
                         SampleRateHertz = 16000
                     }
                 }
